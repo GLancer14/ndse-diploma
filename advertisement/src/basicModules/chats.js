@@ -4,7 +4,7 @@ const { subscribeEmitter, subscribeListenersStorage } = require("../utils/subscr
 class ChatModule {
   static async find(users) {
     try {
-      // console.log("users: " + users);
+      console.log("users: " + users);
       const chat = await Chats.findOne({
         $or: [
           { users: users },
