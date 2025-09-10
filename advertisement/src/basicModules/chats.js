@@ -101,8 +101,8 @@ class ChatModule {
     }
   }
 
-  static subscribe(cb) {
-    subscribeEmitter.on("newMessage", cb);
+  static subscribe(chatId, cb) {
+    subscribeEmitter.on(chatId, cb);
     // console.log(subscribeEmitter.listeners("newMessage"))
   }
 

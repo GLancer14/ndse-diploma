@@ -6,55 +6,68 @@ function createSocketConnection(io) {
     const { id } = socket;
     console.log(`Socket connected: ${id}`);
     
-    const { roomname } = socket.handshake.query;
+    const { userId } = socket.handshake.query;
     // console.log(`Socket room name: ${roomname}`);
 
-    const userChats = await Chats.findAllUsersChats(roomname);
-    // console.log(userChats)
+    const userChats = await Chats.findAllUsersChats(userId);
+    // console.log("CHats count", userChats.length)
 
-    userChats.forEach(chat => {
+    userChats.forEach((chat, _, array) => {
+      // console.log("array length", array.length)
       socket.join(`${chat.id}`);
       const subscribeListener = (chatId, message) => {
         if (chatId === chat.id) {
-          console.log("Message:", message)
+          // console.log("Message:", message)
           socket.to(`${chatId}`).emit("newMessage", message);
         }
       };
-      // const existingSocketListeners = subscribeListenersStorage.get(chat.id);
-      // if (existingSocketListeners) {
-      //   subscribeListenersStorage.set(chat.id, [...existingSocketListeners, subscribeListener]);
-      // } else {
-        // subscribeListenersStorage.set(chat.id, [subscribeListener]);
-        subscribeListenersStorage.set(chat.id, subscribeListener);
-      // }
-      
-      Chats.subscribe(subscribeListener);
+
+      subscribeListenersStorage.set(chat.id, subscribeListener);
+      Chats.subscribe(chat.id, subscribeListener);
     });
+
+    // console.log("Listeners count", subscribeEmitter.listeners("newMessage").length);
 
     // socket.join(roomname);
     socket.on("getHistory", async (receiverId) => {
       // const senderId = JSON.parse(Object.values(socket.request.sessionStore.sessions)[0]).passport.user;
       // const usersIdsParsed = JSON.parse(usersIds)
-      const chat = await Chats.find([roomname, receiverId]);
+      const chat = await Chats.find([userId, receiverId]);
       socket.emit("chatHistory", JSON.stringify(chat));
     });
 
     socket.on("sendMessage", async (messageData) => {
-      const messageDataParsed = JSON.parse(messageData)
-      const newMessage = await Chats.sendMessage(messageDataParsed);
-      const chat = await Chats.find([messageDataParsed.author, messageDataParsed.recevier]);
-      subscribeEmitter.emit("newMessage", chat.id, newMessage);
-      // socket.emit("newMessage", newMessage);
+      const messageDataParsed = JSON.parse(messageData);
+      let newMessage;
+      let chat = await Chats.find([messageDataParsed.author, messageDataParsed.recevier]);
+      if (chat) {
+        newMessage = await Chats.sendMessage(messageDataParsed);
+      } else {
+        newMessage = await Chats.sendMessage(messageDataParsed);
+        chat = await Chats.find([messageDataParsed.author, messageDataParsed.recevier]);
+        socket.join(`${chat.id}`);
+        const subscribeListener = (chatId, message) => {
+          // console.log("Message:", message)
+          if (chatId === chat.id) {
+            socket.to(`${chatId}`).emit("newMessage", message);
+          }
+        };
+
+        subscribeListenersStorage.set(chat.id, subscribeListener);
+        Chats.subscribe(subscribeListener);
+      }
+
+      subscribeEmitter.emit(chat.id, chat.id, newMessage);
     });
 
     socket.on("disconnect", async () => {
       console.log(`Socket disconnected: ${id}`);
-      const userChats = await Chats.findAllUsersChats(roomname);
+      const userChats = await Chats.findAllUsersChats(userId);
       userChats.forEach(chat => {
         // const subscribeListeners = subscribeListenersStorage.get(chat.id);
         const subscribeListener = subscribeListenersStorage.get(chat.id);
         // subscribeListeners.forEach(listener => {
-          subscribeEmitter.removeListener("newMessage", subscribeListener);
+          subscribeEmitter.removeListener(chat.id, subscribeListener);
         // });
         subscribeListenersStorage.delete(chat.id);
       });
