@@ -1,11 +1,11 @@
-const Chat = require("../models/chats");
-const subscribeEmitter = require("../utils/subscribeEmitter");
+const Chats = require("../models/chats");
+const { subscribeEmitter, subscribeListenersStorage } = require("../utils/subscribeEmitter");
 
 class ChatModule {
   static async find(users) {
     try {
-      console.log(users);
-      const chat = await Chat.findOne({
+      // console.log("users: " + users);
+      const chat = await Chats.findOne({
         $or: [
           { users: users },
           { users: [...users].reverse() },
@@ -15,6 +15,25 @@ class ChatModule {
         return chat;
       } else {
         console.log("Чат не найден.");
+        return null;
+      }
+    } catch(e) {
+      console.log(e);
+    }
+  }
+
+  static async findAllUsersChats(user) {
+    try {
+      const chats = await Chats.find({
+        users: {
+          $all: [ user ],
+        }
+      });
+
+      if (chats) {
+        return chats;
+      } else {
+        console.log("Чаты не найдены.");
         return null;
       }
     } catch(e) {
@@ -35,15 +54,17 @@ class ChatModule {
     };
     
     try {
-      const chat = await chat.findOne({
+      const chat = await Chats.findOne({
         $or: [
           { users: [ data.author, data.recevier ] },
           { users: [ data.recevier, data.author ] },
         ],
       });
 
+      // console.log(chat)
+
       if (!chat) {
-        const newChat = new Chat({
+        const newChat = new Chats({
           users: [ data.author, data.recevier ],
           createdAt: newChatDate,
           messages: [ newMessage ],
@@ -51,15 +72,18 @@ class ChatModule {
 
         try {
           await newChat.save();
-    
+          // this.subscribe((chatId, message) => {
+          //   console.log("Subscribe", chatId, message);
+          // });
+
           return newMessage;
         } catch(e) {
           throw new Error(e);
         }
       } else {
         try {
-          const existingChat = await Chat.findByIdAndUpdate(chat._id, {
-            messages: { $push: newMessage },
+          const existingChat = await Chats.findByIdAndUpdate(chat.id, {
+            $push: { messages: newMessage },
           });
 
           if (existingChat) {
@@ -78,14 +102,13 @@ class ChatModule {
   }
 
   static subscribe(cb) {
-    subscribeEmitter.on("subscribe", () => {
-      cb(data);
-    });
+    subscribeEmitter.on("newMessage", cb);
+    // console.log(subscribeEmitter.listeners("newMessage"))
   }
 
   static async getHistory(id) {
     try {
-      const chat = await Chat.findById(id);
+      const chat = await Chats.findById(id);
       if (chat) {
         return chat.messages;
       } else {

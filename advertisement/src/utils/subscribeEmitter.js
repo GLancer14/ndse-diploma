@@ -1,4 +1,6 @@
 const EventEmitter = require("events");
 const subscribeEmitter = new EventEmitter();
+const subscribeListenersStorage = new Map();
 
-module.exports = subscribeEmitter;
+exports.subscribeEmitter = subscribeEmitter;
+exports.subscribeListenersStorage = subscribeListenersStorage;
