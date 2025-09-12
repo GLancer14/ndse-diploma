@@ -2,39 +2,30 @@ const Users = require("../models/users");
 
 class UserModule {
   static async create(data) {
-    const newUser = new Users({ ...data });
     try {
-      const createdUser = await newUser.save();
+      const newUser = new Users({ ...data });
+      const { id, email, name, contactPhone } = await newUser.save();
 
-      return {
-        data: {
-          id: createdUser._id,
-          email: createdUser.email,
-          name: createdUser.name,
-          contactPhone: createdUser.contactPhone,
-        },
-        status: "ok",
-      };
+      return { id, email, name, contactPhone };
     } catch(e) {
-      return e;
+      throw e;
+    }
+  }
+
+  static async findById(id) {
+    try {
+      return await Users.findById(id);
+    } catch(e) {
+      throw e;
     }
   }
 
   static async findByEmail(email) {
     try {
-        const user = await Users.findOne({ email: email });
-        if (user) {
-          return {
-            id: user._id,
-            email: user.email,
-            passwordHash: user.passwordHash,
-            name: user.name,
-            contactPhone: user.contactPhone,
-          };
-        }
-      } catch(e) {
-        console.log(e);
-      }
+      return await Users.findOne({ email });
+    } catch(e) {
+      throw e;
+    }
   }
 }
 

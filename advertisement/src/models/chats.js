@@ -16,13 +16,13 @@ const messagesSchema = new Schema({
   },
   readAt: {
     type: "date",
-    default: "",
+    default: null,
   },
 });
 
 const chatsSchema = new Schema({
   users: {
-    type: "array",
+    type: [ mongoose.Types.ObjectId, mongoose.Types.ObjectId ],
     required: true,
   },
   createdAt: {
@@ -30,9 +30,9 @@ const chatsSchema = new Schema({
     required: true,
   },
   messages: {
-    type: [messagesSchema],
+    type: [ messagesSchema ],
     default: [],
   },
 });
 
-module.exports = model("Chat", chatsSchema);
+module.exports = model("Chats", chatsSchema);

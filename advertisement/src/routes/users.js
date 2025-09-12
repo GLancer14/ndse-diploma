@@ -5,34 +5,24 @@ const router = express.Router();
 const Users = require("../basicModules/users");
 const UsersModel = require("../models/users");
 const authStrategy = require("../middleware/strategy");
-const isAuth = require("../middleware/isAuth");
 
 passport.use("local", authStrategy);
 
 passport.serializeUser((user, cb) => {
-  cb(null, user.id);
+  cb(null, user.email);
 });
 
-passport.deserializeUser(async (id, cb) => {
+passport.deserializeUser(async (email, cb) => {
   try {
-    const user = await UsersModel.findById(id);
+    const user = await Users.findByEmail(email);
     cb(null, user);
   } catch(e) {
     cb(e);
   }
 });
 
-router.get("/logout", (req, res) => {
-  req.logout(err => {
-    if (err) {
-      throw err;
-    }
-  });
-  res.redirect("/");
-});
-
 router.post("/signin", (req, res) => {
-  passport.authenticate("local", (err, user, info) => {
+  passport.authenticate("local", (err, user) => {
     if (err) {
       return res.status(500).json({
         error: "Ошибка сервера",
@@ -65,33 +55,35 @@ router.post("/signin", (req, res) => {
   })(req, res);
 });
 
-router.post("/signup", async (req, res, next) => {
-  const passwordHash = await bcrypt.hash(req.body.password, 10);
-  const newUser = {
-    email: req.body.email,
-    passwordHash: passwordHash,
-    name: req.body.name,
-    contactPhone: req.body.contactPhone,
-  };
+router.post("/signup", async (req, res) => {
+  try {
+    if (!req.body.password) {
+      throw new Error("Введите пароль");
+    }
 
-  const registredUser = await Users.create(newUser);
+    const passwordHash = await bcrypt.hash(req.body.password, 10);
+    const newUser = {
+      email: req.body.email,
+      passwordHash: passwordHash,
+      name: req.body.name,
+      contactPhone: req.body.contactPhone,
+    };
 
-  if (registredUser.status === "ok") {
-    res.json(registredUser);
-  } else {
-    if (registredUser.code === 11000) {
+    const registredUser = await Users.create(newUser);
+    res.json({ data: registredUser, status: "ok" });
+  } catch(e) {
+    if (e.code === 11000) {
       res.json({
         error: "email занят",
         status: "error",
-      })
+      });
     } else {
       res.json({
-        error: registredUser.message,
+        error: e.message,
         status: "error",
-      })
+      });
     }
   }
 });
-// }, passport.authenticate("local"));
 
 module.exports = router;

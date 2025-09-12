@@ -3,82 +3,40 @@ const Ads = require("../models/ads");
 
 class AdsModule {
   static async find(params) {
-    let searchParams = {};
-    if (params) {
+    let searchParams = {
+      $where: "this.isDeleted === false",
+    };
+    if (Object.keys(params).length !== 0) {
       searchParams = {
         $or: [
-          { shortText: { $regex: params.shortText, options: "i" } },
-          { description: { $regex: params.description, options: "i" } },
-          { userId: params.userId },
-          { tags: { $all: params.tags } },
+          { shortText: params?.shortText ? { $regex: params.shortText } : undefined },
+          { description: params?.description ? { $regex: params.description } : undefined },
+          { userId: params?.userId },
+          { tags: params?.tags ? { $all: params.tags } : undefined },
         ],
-        $where: () => {
-          return this.isDeleted === false;
-        },
+        $where: "this.isDeleted === false",
       };
     }
 
     try {
-      const ads = await Ads.find(searchParams);
-      
-      if (ads) {
-        return {
-          data: ads,
-          status: "ok",
-        };
-      } else {
-        console.log("Нет совпадений");
-        return [];
-      }
+      return await Ads.find(searchParams);
     } catch(e) {
-      console.log(e);
+      throw e;
     }
   }
 
   static async findById(id) {
     try {
-      const ads = await Ads.findById(id);
-      
-      if (ads) {
-        return {
-          data: ads,
-          status: "ok",
-        };
-      } else {
-        console.log("Нет совпадений");
-      }
+      return await Ads.findById(id);
     } catch(e) {
-      console.log(e);
+      throw e;
     }
   }
 
   static async create(data) {
-    const createdAt = Date.now();
-    const newAds = new Ads({
-      ...data.body,
-      userId: data.user._id,
-      images: data.files.map(fileInfo => `${fileInfo.destination}/${fileInfo.filename}`),
-      isDeleted: false,
-      updatedAt: createdAt,
-      createdAt: createdAt,
-    });
     try {
-      await newAds.save();
-
-      return {
-        data: {
-          id: newAds.id,
-          shortText: newAds.shortText,
-          description: newAds.description,
-          images: newAds.images,
-          user: {
-            id: data.user.id,
-            name: data.user.name,
-          },
-          createdAt: newAds.createdAt,
-        },
-        status: "ok",
-      };
+      const newAds = new Ads(data);
+      return await newAds.save();
     } catch(e) {
       throw e;
     }
@@ -86,10 +44,7 @@ class AdsModule {
 
   static async remove(id) {
     try {
-      const adsUpdated = await Ads.findByIdAndUpdate(id, { isDeleted: true });
-      if (adsUpdated) {
-        return adsUpdated;
-      }
+      return await Ads.findByIdAndUpdate(id, { isDeleted: true });
     } catch(e) {
       throw e;
     }

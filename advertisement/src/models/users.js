@@ -16,7 +16,6 @@ const usersSchema = new Schema({
   },
   contactPhone: {
     type: "string",
-    required: false,
   },
 });
 

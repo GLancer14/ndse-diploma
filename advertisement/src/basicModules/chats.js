@@ -4,64 +4,34 @@ const { subscribeEmitter, subscribeListenersStorage } = require("../utils/subscr
 class ChatModule {
   static async find(users) {
     try {
-      console.log("users: " + users);
-      const chat = await Chats.findOne({
-        $or: [
-          { users: users },
-          { users: [...users].reverse() },
-        ]
-      });
-      if (chat) {
-        return chat;
-      } else {
-        console.log("Чат не найден.");
-        return null;
-      }
+      return await Chats.findOne({ users: { $all: users } });
     } catch(e) {
-      console.log(e);
+      throw e;
     }
   }
 
   static async findAllUsersChats(user) {
     try {
-      const chats = await Chats.find({
-        users: {
-          $all: [ user ],
-        }
-      });
-
-      if (chats) {
-        return chats;
-      } else {
-        console.log("Чаты не найдены.");
-        return null;
-      }
+      return await Chats.find({ users: { $all: [ user ] } });
     } catch(e) {
-      console.log(e);
+      throw e;
     }
   }
 
   static async sendMessage(data) {
-    if (!data.author || !data.recevier || !data.text) {
-      return;
-    }
-
-    const newChatDate = Date.now();
-    const newMessage = {
-      author: data.author,
-      sentAt: newChatDate,
-      text: data.text,
-    };
-    
     try {
-      const chat = await Chats.findOne({
-        $or: [
-          { users: [ data.author, data.recevier ] },
-          { users: [ data.recevier, data.author ] },
-        ],
-      });
+      if (!(data.author && data.recevier && data.text)) {
+        throw new Error("Отсутствуют необходимые данные для отправки сообщения");
+      }
 
-      // console.log(chat)
+      const newChatDate = Date.now();
+      const newMessage = {
+        author: data.author,
+        sentAt: newChatDate,
+        text: data.text,
+      };
+
+      const chat = await Chats.findOne({ users: { $all: [ data.author, data.recevier ] }});
 
       if (!chat) {
         const newChat = new Chats({
@@ -70,40 +40,27 @@ class ChatModule {
           messages: [ newMessage ],
         });
 
-        try {
-          await newChat.save();
-          // this.subscribe((chatId, message) => {
-          //   console.log("Subscribe", chatId, message);
-          // });
-
-          return newMessage;
-        } catch(e) {
-          throw new Error(e);
-        }
+        const newSavedChat = await newChat.save();
+        return newSavedChat.messages[newSavedChat.messages.length - 1];
       } else {
-        try {
-          const existingChat = await Chats.findByIdAndUpdate(chat.id, {
-            $push: { messages: newMessage },
-          });
+        const existingChat = await Chats.findByIdAndUpdate(chat.id, {
+          $push: { messages: newMessage },
+        });
 
-          if (existingChat) {
-            return newMessage;
-          } else {
-            console.log("Чат не найден.");
-            return null;
-          }
-        } catch(e) {
-          throw new Error(e);
+        if (existingChat) {
+          return existingChat.messages[existingChat.messages.length - 1];
+        } else {
+          console.log("Чат не найден.");
+          return null;
         }
       }
     } catch(e) {
-      console.log(e);
+      throw e;
     }
   }
 
   static subscribe(chatId, cb) {
     subscribeEmitter.on(chatId, cb);
-    // console.log(subscribeEmitter.listeners("newMessage"))
   }
 
   static async getHistory(id) {
@@ -112,11 +69,10 @@ class ChatModule {
       if (chat) {
         return chat.messages;
       } else {
-        console.log("Чат не найден.");
         return null;
       }
     } catch(e) {
-      console.log(e);
+      throw e;
     }
   }
 }
