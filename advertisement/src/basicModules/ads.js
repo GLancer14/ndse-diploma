@@ -1,11 +1,8 @@
-const { default: mongoose } = require("mongoose");
 const Ads = require("../models/ads");
 
 class AdsModule {
   static async find(params) {
-    let searchParams = {
-      $where: "this.isDeleted === false",
-    };
+    let searchParams = { $where: "this.isDeleted === false" };
     if (Object.keys(params).length !== 0) {
       searchParams = {
         $or: [

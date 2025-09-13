@@ -15,7 +15,9 @@ function createSocketConnection(io) {
         socket.join(`${userId}/${chat.id}`);
         const subscribeListener = (chatId, message) => {
           if (chatId === chat.id) {
-            const recevier = chat.users.filter(user => user.toString() !== message.author.toString())[0].toString();
+            const recevier = chat.users.filter(user => {
+              return user.toString() !== message.author.toString();
+            })[0].toString();
             socket.to(`${recevier}/${chat.id}`).emit("newMessage", message);
             socket.emit("newMessage", message);
           }
@@ -33,7 +35,7 @@ function createSocketConnection(io) {
 
     socket.on("getHistory", async (receiverId) => {
       try {
-        const chat = await Chats.find([userId, receiverId]);
+        const chat = await Chats.find([ userId, receiverId ]);
         if (!chat) {
           throw new Error("Чата с данным пользователем не существует");
         }
@@ -56,25 +58,29 @@ function createSocketConnection(io) {
           newMessage = await Chats.sendMessage({ ...messageData, author: userId });
         } else {
           newMessage = await Chats.sendMessage({ ...messageData, author: userId });
-          chat = await Chats.find([userId, messageData.recevier]);
+          chat = await Chats.find([ userId, messageData.recevier ]);
 
           socket.join(`${userId}/${chat.id}`);
           const authorSubscribeListener = (chatId, message) => {
             if (chatId === chat.id) {
-              const recevier = chat.users.filter(user => user.toString() !== message.author.toString())[0].toString();
+              const recevier = chat.users.filter(user => {
+                return user.toString() !== message.author.toString();
+              })[0].toString();
               socket.to(`${recevier}/${chat.id}`).emit("newMessage", message);
               socket.emit("newMessage", message);
             }
           };
 
           let recevierSocket = Array.from(io.sockets.sockets).find(socket => {
-            return messageData.recevier === socket[1].handshake.query.userId
+            return messageData.recevier === socket[1].handshake.query.userId;
           })[1];
 
           recevierSocket.join(`${messageData.recevier}/${chat.id}`);
           const recevierSubscribeListener = (chatId, message) => {
             if (chatId === chat.id) {
-              const recevier = chat.users.filter(user => user.toString() === message.author.toString())[0].toString();
+              const recevier = chat.users.filter(user => {
+                return user.toString() === message.author.toString();
+              })[0].toString();
               recevierSocket.to(`${recevier}/${chat.id}`).emit("newMessage", message);
               recevierSocket.emit("newMessage", message);
             }

@@ -3,7 +3,6 @@ const fs = require("fs");
 const fileMulter = require("../middleware/file");
 const AdsModule = require("../basicModules/ads");
 const Users = require("../basicModules/users");
-const AdsModel = require("../models/ads");
 const isAuth = require("../middleware/isAuth");
 
 const router = express.Router();
@@ -12,7 +11,7 @@ router.get("/", async (req, res) => {
   try {
     const ads = await AdsModule.find(req.query);
     const adsObjects = await Promise.all(ads.map(async (ad) => {
-      const { name: adAuhtorName } = await Users.findById(ad.userId);
+      const adAuhtor = await Users.findById(ad.userId);
       return {
         id: ad.id,
         shortText: ad.shortText,
@@ -20,7 +19,7 @@ router.get("/", async (req, res) => {
         images: ad.images,
         user: {
           id: ad.userId,
-          name: adAuhtorName,
+          name: adAuhtor?.name,
         },
         createdAt: ad.createdAt,
       };
@@ -28,7 +27,7 @@ router.get("/", async (req, res) => {
     res.json({
       data: adsObjects,
       status: "ok",
-  });
+    });
   } catch(e) {
     res.json({
       error: e.message,
@@ -74,20 +73,20 @@ router.post("/", isAuth, fileMulter.array("images"), async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   try {
-    const ads = await AdsModule.findById(req.params.id);
-    if (ads) {
-      const { name: adAuhtorName } = await Users.findById(ads.userId);
+    const ad = await AdsModule.findById(req.params.id);
+    if (ad) {
+      const adAuhtor = await Users.findById(ad.userId);
       res.json({
         data: {
-          id: ads.id,
-          shortText: ads.shortText,
-          description: ads.description,
-          images: ads.images,
+          id: ad.id,
+          shortText: ad.shortText,
+          description: ad.description,
+          images: ad.images,
           user: {
-            id: ads.userId,
-            name: adAuhtorName,
+            id: ad.userId,
+            name: adAuhtor?.name,
           },
-          createdAt: ads.createdAt,
+          createdAt: ad.createdAt,
         },
         status: "ok",
       });
@@ -107,17 +106,17 @@ router.get("/:id", async (req, res) => {
 
 router.delete("/:id", isAuth, async (req, res) => {
   try {
-    const deletingAds = await AdsModule.findById(req.params.id);
-    if (deletingAds) {
-      if (req.user.id !== deletingAds.userId.toString()) {
+    const deletingAd = await AdsModule.findById(req.params.id);
+    if (deletingAd) {
+      if (req.user.id !== deletingAd.userId.toString()) {
         return res.status(403).json({
           error: "Вы не можете удалить чужое объявление",
           status: "error",
         });
       }
 
-      const ads = await AdsModule.remove(req.params.id);
-      if (ads) {
+      const ad = await AdsModule.remove(req.params.id);
+      if (ad) {
         res.json({
           data: `Объявление ${req.params.id} удалено`,
           status: "ok",

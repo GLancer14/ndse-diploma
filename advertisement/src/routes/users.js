@@ -1,20 +1,20 @@
 const express = require("express");
 const passport = require("passport");
 const bcrypt = require("bcryptjs");
-const router = express.Router();
 const Users = require("../basicModules/users");
-const UsersModel = require("../models/users");
 const authStrategy = require("../middleware/strategy");
+
+const router = express.Router();
 
 passport.use("local", authStrategy);
 
 passport.serializeUser((user, cb) => {
-  cb(null, user.email);
+  cb(null, user.id);
 });
 
-passport.deserializeUser(async (email, cb) => {
+passport.deserializeUser(async (id, cb) => {
   try {
-    const user = await Users.findByEmail(email);
+    const user = await Users.findById(id);
     cb(null, user);
   } catch(e) {
     cb(e);

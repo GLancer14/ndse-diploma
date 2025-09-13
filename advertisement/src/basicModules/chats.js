@@ -1,5 +1,5 @@
 const Chats = require("../models/chats");
-const { subscribeEmitter, subscribeListenersStorage } = require("../utils/subscribeEmitter");
+const { subscribeEmitter } = require("../utils/subscribeEmitter");
 
 class ChatModule {
   static async find(users) {
@@ -32,7 +32,6 @@ class ChatModule {
       };
 
       const chat = await Chats.findOne({ users: { $all: [ data.author, data.recevier ] }});
-
       if (!chat) {
         const newChat = new Chats({
           users: [ data.author, data.recevier ],

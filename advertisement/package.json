@@ -1,5 +1,5 @@
 {
-  "name": "ndse-homeworks",
+  "name": "ndse-diploma",
   "version": "1.0.0",
   "description": "",
   "license": "ISC",
@@ -7,20 +7,17 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "nodemon index.js"
   },
-  "repository": "https://github.com/GLancer14/ndse-homeworks",
+  "repository": "https://github.com/GLancer14/ndse-diploma",
   "devDependencies": {
     "dotenv": "^17.2.1",
     "nodemon": "^3.1.10"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
-    "ejs": "^3.1.10",
     "express": "^5.1.0",
     "express-session": "^1.18.2",
-    "method-override": "^3.0.0",
     "mongoose": "^8.17.1",
     "multer": "^2.0.2",
     "passport": "^0.7.0",
