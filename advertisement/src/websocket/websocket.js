@@ -16,7 +16,6 @@ function createSocketConnection(io) {
         const subscribeListener = (chatId, message) => {
           if (chatId === chat.id) {
             const recevier = chat.users.filter(user => user.toString() !== message.author.toString())[0].toString();
-            console.log(`${recevier}/${chat.id}`)
             socket.to(`${recevier}/${chat.id}`).emit("newMessage", message);
             socket.emit("newMessage", message);
           }
@@ -35,6 +34,10 @@ function createSocketConnection(io) {
     socket.on("getHistory", async (receiverId) => {
       try {
         const chat = await Chats.find([userId, receiverId]);
+        if (!chat) {
+          throw new Error("Чата с данным пользователем не существует");
+        }
+
         socket.emit("chatHistory", chat.messages);
       } catch(e) {
         console.log(e.message);
@@ -48,18 +51,16 @@ function createSocketConnection(io) {
     socket.on("sendMessage", async (messageData) => {
       try {
         let newMessage;
-        let chat = await Chats.find([messageData.author, messageData.recevier]);
+        let chat = await Chats.find([userId, messageData.recevier]);
         if (chat) {
-          newMessage = await Chats.sendMessage(messageData);
+          newMessage = await Chats.sendMessage({ ...messageData, author: userId });
         } else {
-          newMessage = await Chats.sendMessage(messageData);
-          chat = await Chats.find([messageData.author, messageData.recevier]);
+          newMessage = await Chats.sendMessage({ ...messageData, author: userId });
+          chat = await Chats.find([userId, messageData.recevier]);
 
           socket.join(`${userId}/${chat.id}`);
           const authorSubscribeListener = (chatId, message) => {
             if (chatId === chat.id) {
-              console.log("New chat's message:", message)
-
               const recevier = chat.users.filter(user => user.toString() !== message.author.toString())[0].toString();
               socket.to(`${recevier}/${chat.id}`).emit("newMessage", message);
               socket.emit("newMessage", message);
@@ -98,16 +99,18 @@ function createSocketConnection(io) {
 
     socket.on("disconnect", async () => {
       console.log(`Socket disconnected: ${id}`);
-      const userChats = await Chats.findAllUsersChats(userId);
-      userChats.forEach(chat => {
-        const subscribeListener = subscribeListenersStorage.get(`${userId}/${chat.id}`);
-        subscribeEmitter.removeListener(`${userId}/${chat.id}`, subscribeListener);
-        subscribeListenersStorage.delete(`${userId}/${chat.id}`);
-      });
+      try {
+        const userChats = await Chats.findAllUsersChats(userId);
+        userChats.forEach(chat => {
+          const subscribeListener = subscribeListenersStorage.get(`${userId}/${chat.id}`);
+          subscribeEmitter.removeListener(`${userId}/${chat.id}`, subscribeListener);
+          subscribeListenersStorage.delete(`${userId}/${chat.id}`);
+        });
+      } catch(e) {
+        console.log(e.message);
+      }
     });
   });
-
-  return io;
 }
 
 module.exports = createSocketConnection;
