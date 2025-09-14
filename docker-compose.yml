@@ -3,11 +3,12 @@ services:
         build: ./advertisement
         volumes:
             - ./volume:/volume
+            - ./volume/public/images:/app/src/public/images
         ports:
             - 3000:3000
         environment:
             - PORT=3000
-            - DBURL=mongodb://root:example@mongo:27017/library?authSource=admin
+            - DBURL=mongodb://root:example@mongo:27017/advertisement?authSource=admin
             - SESSION_SECRET=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
     mongo:
