@@ -1,6 +1,5 @@
+const { errorResponseHandler } = require("../utils/responseHandlers");
+
 module.exports = (req, res) => {
-  res.status(404).json({
-    error: "404 | Not found",
-    status: "error",
-  });
+  errorResponseHandler(res, "404 | Not found", 404);
 };
