@@ -1,6 +1,5 @@
 const express = require("express");
 const session = require("express-session");
-const dotenv = require("dotenv");
 const path = require("path");
 const mongoose = require("mongoose");
 const passport = require("passport");
@@ -13,8 +12,6 @@ const createSocketConnection = require("./src/websocket/websocket");
 const PORT = require("./src/config/server.config");
 const DBURL = require("./src/config/mongo.config");
 const sessionConfig = require("./src/config/session.config");
-
-dotenv.config();
 
 const app = express();
 const server = http.Server(app);
