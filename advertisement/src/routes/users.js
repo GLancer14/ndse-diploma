@@ -3,6 +3,7 @@ const passport = require("passport");
 const bcrypt = require("bcryptjs");
 const Users = require("../basicModules/users");
 const authStrategy = require("../middleware/strategy");
+const { responseHandler, errorResponseHandler } = require("../utils/responseHandlers");
 
 const router = express.Router();
 
@@ -24,17 +25,11 @@ passport.deserializeUser(async (id, cb) => {
 router.post("/signin", (req, res) => {
   passport.authenticate("local", (err, user) => {
     if (err) {
-      return res.status(500).json({
-        error: "Ошибка сервера",
-        status: "error",
-      });
+      return errorResponseHandler(res, "Ошибка сервера", 500);
     }
 
     if (!user) {
-      return res.status(401).json({
-        error: "Неверный логин или пароль",
-        status: "error",
-      });
+      return errorResponseHandler(res, "Неверный логин или пароль", 401);
     }
 
     req.login(user, err => {
@@ -42,15 +37,14 @@ router.post("/signin", (req, res) => {
         throw err;
       }
 
-      return res.json({
-        data: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          contactPhone: user.contactPhone,
-        },
-        status: "ok",
-      });
+      const resData = {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        contactPhone: user.contactPhone,
+      };
+
+      responseHandler(res, resData);
     });
   })(req, res);
 });
@@ -70,18 +64,12 @@ router.post("/signup", async (req, res) => {
     };
 
     const registredUser = await Users.create(newUser);
-    res.json({ data: registredUser, status: "ok" });
+    responseHandler(res, registredUser);
   } catch(e) {
     if (e.code === 11000) {
-      res.json({
-        error: "email занят",
-        status: "error",
-      });
+      errorResponseHandler(res, "email занят");
     } else {
-      res.json({
-        error: e.message,
-        status: "error",
-      });
+      errorResponseHandler(res, e.message);
     }
   }
 });

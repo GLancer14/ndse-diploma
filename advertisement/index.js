@@ -10,6 +10,9 @@ const usersRoutes = require("./src/routes/users");
 const advertisementRoutes = require("./src/routes/advertisement");
 const error404 = require("./src/middleware/404");
 const createSocketConnection = require("./src/websocket/websocket");
+const PORT = require("./src/config/server.config");
+const DBURL = require("./src/config/mongo.config");
+const sessionConfig = require("./src/config/session.config");
 
 dotenv.config();
 
@@ -22,13 +25,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "src/public")));
 
-const sessionMiddleware = session({
-  secret: "secret",
-  resave: false,
-  saveUninitialized: false,
-});
-
-app.use(sessionMiddleware);
+app.use(session(sessionConfig));
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -46,6 +43,4 @@ async function start(PORT, DBURL) {
   }
 }
 
-const PORT = process.env.PORT || 3000;
-const DBURL = process.env.DBURL;
 start(PORT, DBURL);

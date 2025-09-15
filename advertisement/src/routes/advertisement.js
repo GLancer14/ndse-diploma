@@ -4,6 +4,7 @@ const fileMulter = require("../middleware/file");
 const AdsModule = require("../basicModules/ads");
 const Users = require("../basicModules/users");
 const isAuth = require("../middleware/isAuth");
+const { responseHandler, errorResponseHandler } = require("../utils/responseHandlers");
 
 const router = express.Router();
 
@@ -24,15 +25,10 @@ router.get("/", async (req, res) => {
         createdAt: ad.createdAt,
       };
     }));
-    res.json({
-      data: adsObjects,
-      status: "ok",
-    });
+
+    responseHandler(res, adsObjects);
   } catch(e) {
-    res.json({
-      error: e.message,
-      status: "error",
-    });
+    errorResponseHandler(res, e.message);
   }
 });
 
@@ -45,29 +41,25 @@ router.post("/", isAuth, fileMulter.array("images"), async (req, res) => {
       isDeleted: false,
     };
     const newAds = await AdsModule.create(reqData);
-    res.json({
-      data: {
-        id: newAds.id,
-        shortText: newAds.shortText,
-        description: newAds.description,
-        images: newAds.images,
-        user: {
-          id: req.user.id,
-          name: req.user.name,
-        },
-        createdAt: newAds.createdAt,
+    const resData = {
+      id: newAds.id,
+      shortText: newAds.shortText,
+      description: newAds.description,
+      images: newAds.images,
+      user: {
+        id: req.user.id,
+        name: req.user.name,
       },
-      status: "ok",
-    });
+      createdAt: newAds.createdAt,
+    };
+
+    responseHandler(res, resData);
   } catch(e) {
     if (req?.files) {
       req.files.forEach(fileInfo => fs.rmSync(`${fileInfo.destination}/${fileInfo.filename}`));
     }
 
-    res.json({
-      error: e.message,
-      status: "error",
-    });
+    errorResponseHandler(res, e.message);
   }
 });
 
@@ -76,31 +68,24 @@ router.get("/:id", async (req, res) => {
     const ad = await AdsModule.findById(req.params.id);
     if (ad) {
       const adAuhtor = await Users.findById(ad.userId);
-      res.json({
-        data: {
-          id: ad.id,
-          shortText: ad.shortText,
-          description: ad.description,
-          images: ad.images,
-          user: {
-            id: ad.userId,
-            name: adAuhtor?.name,
-          },
-          createdAt: ad.createdAt,
+      const resData = {
+        id: ad.id,
+        shortText: ad.shortText,
+        description: ad.description,
+        images: ad.images,
+        user: {
+          id: ad.userId,
+          name: adAuhtor?.name,
         },
-        status: "ok",
-      });
+        createdAt: ad.createdAt,
+      };
+
+      responseHandler(res, resData);
     } else {
-      res.status(404).json({
-        error: "Объявление не найдено",
-        status: "error",
-      });
+      errorResponseHandler(res, "Объявление не найдено", 404);
     }
   } catch(e) {
-    res.json({
-      error: e.message,
-      status: "error",
-    });
+    errorResponseHandler(res, e.message);
   }
 });
 
@@ -109,30 +94,18 @@ router.delete("/:id", isAuth, async (req, res) => {
     const deletingAd = await AdsModule.findById(req.params.id);
     if (deletingAd) {
       if (req.user.id !== deletingAd.userId.toString()) {
-        return res.status(403).json({
-          error: "Вы не можете удалить чужое объявление",
-          status: "error",
-        });
+        return errorResponseHandler(res, "Вы не можете удалить чужое объявление", 403);
       }
 
       const ad = await AdsModule.remove(req.params.id);
       if (ad) {
-        res.json({
-          data: `Объявление ${req.params.id} удалено`,
-          status: "ok",
-        });
+        responseHandler(res, `Объявление ${req.params.id} удалено`);
       }
     } else {
-      res.json({
-        error: "Объявление не найдено",
-        status: "error",
-      });
+      errorResponseHandler(res, "Объявление не найдено", 404);
     }
   } catch(e) {
-    res.json({
-      error: e.message,
-      status: "error",
-    });
+    errorResponseHandler(res, e.message);
   }
 });
 

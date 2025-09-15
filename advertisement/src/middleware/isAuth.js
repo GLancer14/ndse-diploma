@@ -1,9 +1,8 @@
+const { errorResponseHandler } = require("../utils/responseHandlers");
+
 module.exports = (req, res, next) => {
   if (!req.isAuthenticated()) {
-    return res.status(401).json({
-      error: "Вы не авторизованы",
-      status: "error",
-    });
+    return errorResponseHandler(res, "Вы не авторизованы", 401);
   }
 
   next();

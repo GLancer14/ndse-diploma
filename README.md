@@ -7,14 +7,14 @@
 
 ## HTTP маршруты
 
-`POST /api/signup` — зарегистрироваться.  
-`POST /api/signin` — залогиниться.  
+- `POST /api/signup` — зарегистрироваться.  
+- `POST /api/signin` — залогиниться.  
   
-`GET /api/advertisements` — получить список объявлений.  
-`GET /api/advertisements/:id` — получить данные объявления.  
+- `GET /api/advertisements` — получить список объявлений.  
+- `GET /api/advertisements/:id` — получить данные объявления.  
   
-`POST /api/advertisements` — создать объявление.  
-`DELETE /api/advertisements/:id` — удалить объявление.  
+- `POST /api/advertisements` — создать объявление.  
+- `DELETE /api/advertisements/:id` — удалить объявление.  
 
 ## Socket.IO
 
